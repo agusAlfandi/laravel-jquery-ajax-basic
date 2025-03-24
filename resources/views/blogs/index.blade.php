@@ -103,7 +103,7 @@
     <!-- Laravel Javascript Validation -->
     <script type="text/javascript" src="{{ asset('vendor/jsvalidation/js/jsvalidation.js') }}"></script>
 
-    {!! JsValidator::formRequest('App\Http\Requests\MyFormRequest') !!}
+    {!! JsValidator::formRequest('App\Http\Requests\blogRequest', '#createForm') !!}
 
     <script>
         $(document).ready(function() {
@@ -116,6 +116,9 @@
                 responsive: true,
                 serverSide: true,
                 ajax: '{{ route('blog.dataTable') }}',
+                order: [
+                    [3, 'desc']
+                ],
                 columns: [{
                         data: 'DT_RowIndex',
                         name: 'DT_RowIndex'
@@ -147,6 +150,43 @@
             // $('.modal-title').text('Create Blog');
             // $('.btnSubmit').text('Create');
         }
+
+        $('#createForm').on('submit', function(e) {
+            e.preventDefault();
+
+            const formData = new FormData(this);
+            $.ajax({
+                header: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                url: "blog",
+                type: "POST",
+                data: formData,
+                contentType: false,
+                processData: false,
+                success: function(response) {
+                    $('#createModal').modal('hide');
+                    // $('#create-form')[0].reset();
+                    $('#blog-table').DataTable().ajax.reload();
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success',
+                        text: response.message,
+                        showConfirmButton: false,
+                        timer: 1500
+                    });
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    console.log('Error:', jqXHR.responseText);
+                    alert(jqXHR.responseText);
+                    // Swal.fire({
+                    //     icon: 'error',
+                    //     title: 'Error',
+                    //     text: 'Data cannot be saved!'
+                    // });
+                }
+            });
+        });
     </script>
 </body>
 {{-- <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script> --}}

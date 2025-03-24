@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\blogRequest;
 use App\Http\Requests\StoreBlogRequest;
 use App\Http\Requests\UpdateBlogRequest;
 use App\Models\Blog;
@@ -30,9 +31,11 @@ class BlogController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreBlogRequest $request)
+    public function store(blogRequest $request)
     {
-        //
+        $validated = $request->validated();
+        Blog::create($validated);
+        return response()->json(['message' => 'Blog created successfully']);
     }
 
     /**
