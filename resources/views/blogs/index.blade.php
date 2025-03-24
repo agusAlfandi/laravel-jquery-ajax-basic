@@ -176,7 +176,6 @@
                 },
                 error: function(jqXHR, textStatus, errorThrown) {
                     console.log('Error:', jqXHR.responseText);
-                    // alert(jqXHR.responseText);
                     Swal.fire({
                         icon: 'error',
                         title: 'Error',
