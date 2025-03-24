@@ -147,8 +147,6 @@
 
         function showModal() {
             $('#createModal').modal('show');
-            // $('.modal-title').text('Create Blog');
-            // $('.btnSubmit').text('Create');
         }
 
         $('#createForm').on('submit', function(e) {
