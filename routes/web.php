@@ -9,4 +9,5 @@ Route::get('/', function () {
 
 Route::get('blog/dataTable', [BlogController::class, 'serverSideTable'])->name('blog.dataTable'); // Ensure this route is defined
 Route::post('blog/store', [BlogController::class, 'store'])->name('blog.store');
+// Route::delete('blog/{id}', [BlogController::class, 'destroy'])->name('blog.destroy');
 Route::resource('blog', BlogController::class);

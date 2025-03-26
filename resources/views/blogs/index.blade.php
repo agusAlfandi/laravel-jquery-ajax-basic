@@ -106,8 +106,24 @@
     {!! JsValidator::formRequest('App\Http\Requests\blogRequest', '#createForm') !!}
 
     <script>
+        let save_method;
+
         $(document).ready(function() {
             blogTable();
+        });
+
+        function resetValidation() {
+            $('.is-invalid').removeClass('is-invalid');
+            $('.is-valid').removeClass('is-valid');
+            $('span.invalid-feedback').remove();
+        }
+
+        $('#createModal').on('hidden.bs.modal', function() {
+            $('#createForm')[0].reset();
+            resetValidation();
+            save_method = 'create';
+            $('.modal-title').text('Create Blog');
+            $('.submitBtn').text('Create');
         });
 
         function blogTable() {
@@ -121,19 +137,23 @@
                 ],
                 columns: [{
                         data: 'DT_RowIndex',
-                        name: 'DT_RowIndex'
+                        name: 'DT_RowIndex',
+                        width: '5%'
                     },
                     {
                         data: 'title',
-                        name: 'title'
+                        name: 'title',
+                        width: '20%'
                     },
                     {
                         data: 'content',
-                        name: 'content'
+                        name: 'content',
+                        width: '50%'
                     },
                     {
                         data: 'created_at',
-                        name: 'created_at'
+                        name: 'created_at',
+                        width: '15%'
                     },
                     {
                         data: 'action',
@@ -146,25 +166,41 @@
         }
 
         function showModal() {
+            $('#createForm')[0].reset();
+            resetValidation();
             $('#createModal').modal('show');
+            save_method = 'create';
+            $('.modal-title').text('Create Blog');
+            $('.submitBtn').text('Create');
         }
 
+        // store or update
         $('#createForm').on('submit', function(e) {
             e.preventDefault();
-
             const formData = new FormData(this);
+
+            let method, url;
+            url = 'blog';
+            method = 'POST';
+
+            if (save_method == 'update') {
+                url = 'blog/' + formData.get('id');
+                formData.append('_method', 'PUT');
+            }
+
             $.ajax({
-                header: {
+                headers: {
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                 },
-                url: "blog",
-                type: "POST",
+                url: url,
+                type: method,
                 data: formData,
                 contentType: false,
                 processData: false,
                 success: function(response) {
+                    $('#createForm')[0].reset();
+                    resetValidation();
                     $('#createModal').modal('hide');
-                    // $('#create-form')[0].reset();
                     $('#blog-table').DataTable().ajax.reload();
                     Swal.fire({
                         icon: 'success',
@@ -184,8 +220,84 @@
                 }
             });
         });
+
+        // destroy
+        function deleteModal(e) {
+            let id = e.getAttribute('id');
+
+            Swal.fire({
+                title: 'Delete Blog?',
+                text: "Are you sure!",
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Yes'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        headers: {
+                            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                        },
+                        url: "blog/" + id,
+                        type: "DELETE",
+                        dataType: 'json',
+                        success: function(response) {
+                            $('#blog-table').DataTable().ajax.reload();
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Success',
+                                text: response.message,
+                                showConfirmButton: false,
+                                timer: 1500
+                            });
+                        },
+                        error: function(jqXHR, textStatus, errorThrown) {
+                            console.log('Error:', jqXHR.responseText);
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: 'Data cannot be deleted!'
+                            });
+                        }
+                    });
+                }
+            });
+        }
+
+        // edit blog
+        function editModal(e) {
+            let id = e.getAttribute('id');
+            save_method = 'update';
+            $.ajax({
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                url: "blog/" + id,
+                type: "GET",
+                success: function(response) {
+                    let res = response.data
+                    $('#id').val(res.id);
+                    $('#title').val(res.title);
+                    $('#content').val(res.content);
+
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    console.log('Error:', jqXHR.responseText);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Data cannot be saved!'
+                    });
+                }
+            });
+
+            resetValidation();
+            $('#createModal').modal('show');
+            $('.modal-title').text('Edit Blog');
+            $('.submitBtn').text('Update');
+        }
     </script>
 </body>
-{{-- <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script> --}}
 
 </html>

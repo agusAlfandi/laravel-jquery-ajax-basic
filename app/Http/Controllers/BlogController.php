@@ -8,6 +8,7 @@ use App\Http\Requests\UpdateBlogRequest;
 use App\Models\Blog;
 use Illuminate\Http\Request; // Corrected import
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\JsonResponse;
 use Yajra\DataTables\Facades\DataTables;
 
 class BlogController extends Controller
@@ -31,7 +32,7 @@ class BlogController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(blogRequest $request)
+    public function store(blogRequest $request): JsonResponse
     {
         $validated = $request->validated();
         Blog::create($validated);
@@ -41,10 +42,9 @@ class BlogController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Blog $blog)
+    public function show(String $id)
     {
-        $blogs = Blog::all();
-        return response()->json($blogs);
+        return response()->json(['data' => Blog::findOrFail($id)]);
     }
 
     /**
@@ -58,22 +58,21 @@ class BlogController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateBlogRequest $request, Blog $blog, $id)
+    public function update(blogRequest $request, string $id)
     {
-        $blog = Blog::find($id);
-        $blog->title = $request->input('title');
-        $blog->body = $request->input('body');
-        $blog->save();
+        $validated = $request->validated();
+        $blog = Blog::find($id)->update($validated);
 
-        return response()->json(['success' => 'Blog updated successfully']);
+        return response()->json(['message' => 'Blog updated successfully']);
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Blog $blog)
+    public function destroy($id): JsonResponse
     {
-        //
+        Blog::destroy($id);
+        return response()->json(['message' => 'Blog deleted successfully']);
     }
 
     public function serverSideTable(Request $request)
@@ -97,8 +96,8 @@ class BlogController extends Controller
             ->addColumn('action', function ($blog) {
                 return '
                 <div class="d-flex justify-content-center align-items-center">
-                <a href="#" class="btn btn-xs btn-primary edit me-2" id="' . $blog->id . '"><i class="glyphicon glyphicon-edit"></i> Edit</a>
-                <a href="#" class="btn btn-xs btn-danger delete" id="' . $blog->id . '"><i class="glyphicon glyphicon-trash"></i> Delete</a>
+                <a href="#" class="btn btn-xs btn-primary edit me-2" onClick="editModal(this)" id="' . $blog->id . '"><i class="glyphicon glyphicon-edit"></i> Edit</a>
+                <a href="#" class="btn btn-xs btn-danger delete" onClick="deleteModal(this)" id="' . $blog->id . '"><i class="glyphicon glyphicon-trash"></i> Delete</a>
                 </div>';
             })
             ->rawColumns(['action'])
