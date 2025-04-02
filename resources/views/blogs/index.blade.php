@@ -223,7 +223,7 @@
 
         // destroy
         function deleteModal(e) {
-            let id = e.getAttribute('id');
+            let id = e.getAttribute('data-id');
 
             Swal.fire({
                 title: 'Delete Blog?',
@@ -267,7 +267,9 @@
 
         // edit blog
         function editModal(e) {
-            let id = e.getAttribute('id');
+            let id = e.getAttribute('data-id');
+            console.log('Editing blog with UUID:', id);
+
             save_method = 'update';
             $.ajax({
                 headers: {
@@ -276,13 +278,16 @@
                 url: "blog/" + id,
                 type: "GET",
                 success: function(response) {
+                    // alert(response);
+                    console.log('Response:', response.data);
                     let res = response.data
-                    $('#id').val(res.id);
+                    $('#id').val(res.uuid);
                     $('#title').val(res.title);
                     $('#content').val(res.content);
 
                 },
                 error: function(jqXHR, textStatus, errorThrown) {
+                    alert(jqXHR.responseText);
                     console.log('Error:', jqXHR.responseText);
                     Swal.fire({
                         icon: 'error',

@@ -2,14 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Blog;
+use Illuminate\Support\Str;
+use Illuminate\Http\JsonResponse;
 use App\Http\Requests\blogRequest;
+use Illuminate\Contracts\View\View;
 use App\Http\Requests\StoreBlogRequest;
 use App\Http\Requests\UpdateBlogRequest;
-use App\Models\Blog;
-use Illuminate\Http\Request; // Corrected import
-use Illuminate\Contracts\View\View;
-use Illuminate\Http\JsonResponse;
 use Yajra\DataTables\Facades\DataTables;
+use Illuminate\Http\Request; // Corrected import
 
 class BlogController extends Controller
 {
@@ -35,6 +36,8 @@ class BlogController extends Controller
     public function store(blogRequest $request): JsonResponse
     {
         $validated = $request->validated();
+        // $validated['uuid'] = (string) \Illuminate\Support\Str::uuid();
+        $validated['uuid'] = Str::uuid();
         Blog::create($validated);
         return response()->json(['message' => 'Blog created successfully']);
     }
@@ -42,9 +45,14 @@ class BlogController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(String $id)
+    public function show(String $id): JsonResponse
     {
-        return response()->json(['data' => Blog::findOrFail($id)]);
+        try {
+            $blog = Blog::where('uuid', $id)->firstOrFail();
+            return response()->json(['data' => $blog]);
+        } catch (Exception $e) {
+            // return response()->json(['message' => 'Blog not found'], 404);
+        }
     }
 
     /**
@@ -61,9 +69,18 @@ class BlogController extends Controller
     public function update(blogRequest $request, string $id)
     {
         $validated = $request->validated();
-        $blog = Blog::find($id)->update($validated);
+        // dd($validated);
+        try {
+            $validated['uuid'] = Str::uuid();
+            $blogs = Blog::where('uuid', $id)->update($validated);
+            // $blogs->save();
+            // $blog = Blog::findOrFail($id)->update($validated);
 
-        return response()->json(['message' => 'Blog updated successfully']);
+            return response()->json(['message' => 'Blog updated successfully']);
+        } catch (Exception $e) {
+            // return response()->json(['message' => 'Blog not found'], 404);
+        }
+
     }
 
     /**
@@ -71,13 +88,13 @@ class BlogController extends Controller
      */
     public function destroy($id): JsonResponse
     {
-        Blog::destroy($id);
+        Blog::where('uuid', $id)->delete();
         return response()->json(['message' => 'Blog deleted successfully']);
     }
 
     public function serverSideTable(Request $request)
     {
-        $blogs = Blog::select(['id', 'title', 'content', 'created_at']);
+        $blogs = Blog::select(['id', 'uuid', 'title', 'content', 'created_at']);
         return DataTables::of($blogs)
             ->addIndexColumn()
             ->filter(function ($query) use ($request) {
@@ -96,8 +113,8 @@ class BlogController extends Controller
             ->addColumn('action', function ($blog) {
                 return '
                 <div class="d-flex justify-content-center align-items-center">
-                <a href="#" class="btn btn-xs btn-primary edit me-2" onClick="editModal(this)" id="' . $blog->id . '"><i class="glyphicon glyphicon-edit"></i> Edit</a>
-                <a href="#" class="btn btn-xs btn-danger delete" onClick="deleteModal(this)" id="' . $blog->id . '"><i class="glyphicon glyphicon-trash"></i> Delete</a>
+                <button class="btn btn-xs btn-primary edit me-2" onClick="editModal(this)" data-id="' . $blog->uuid . '"><i class="glyphicon glyphicon-edit"></i> Edit</button>
+                <button class="btn btn-xs btn-danger delete" onClick="deleteModal(this)" data-id="' . $blog->uuid . '"><i class="glyphicon glyphicon-trash"></i> Delete</button>
                 </div>';
             })
             ->rawColumns(['action'])
