@@ -17,6 +17,7 @@ class BlogFactory extends Factory
     public function definition(): array
     {
         return [
+            'uuid' => $this->faker->uuid,
             'title' => $this->faker->sentence,
             'content' => $this->faker->paragraph,
         ];
