@@ -9,11 +9,13 @@ use App\Http\Requests\blogRequest;
 use Illuminate\Contracts\View\View;
 use App\Http\Requests\StoreBlogRequest;
 use App\Http\Requests\UpdateBlogRequest;
-use Yajra\DataTables\Facades\DataTables;
-use Illuminate\Http\Request; // Corrected import
+use Illuminate\Http\Request;
+use App\Service\BlogService;
 
 class BlogController extends Controller
 {
+
+    public function __construct(protected BlogService $blogService) {}
     /**
      * Display a listing of the resource.
      */
@@ -36,10 +38,8 @@ class BlogController extends Controller
     public function store(blogRequest $request): JsonResponse
     {
         $validated = $request->validated();
-        // $validated['uuid'] = (string) \Illuminate\Support\Str::uuid();
-        $validated['uuid'] = Str::uuid();
-        Blog::create($validated);
-        return response()->json(['message' => 'Blog created successfully']);
+        return $this->blogService->create($validated);
+
     }
 
     /**
@@ -47,12 +47,7 @@ class BlogController extends Controller
      */
     public function show(String $id): JsonResponse
     {
-        try {
-            $blog = Blog::where('uuid', $id)->firstOrFail();
-            return response()->json(['data' => $blog]);
-        } catch (Exception $e) {
-            // return response()->json(['message' => 'Blog not found'], 404);
-        }
+     return $this->blogService->detail($id);
     }
 
     /**
@@ -69,17 +64,7 @@ class BlogController extends Controller
     public function update(blogRequest $request, string $id)
     {
         $validated = $request->validated();
-        // dd($validated);
-        try {
-            $validated['uuid'] = Str::uuid();
-            $blogs = Blog::where('uuid', $id)->update($validated);
-            // $blogs->save();
-            // $blog = Blog::findOrFail($id)->update($validated);
-
-            return response()->json(['message' => 'Blog updated successfully']);
-        } catch (Exception $e) {
-            // return response()->json(['message' => 'Blog not found'], 404);
-        }
+        return $this->blogService->update($validated, $id);
 
     }
 
@@ -88,36 +73,11 @@ class BlogController extends Controller
      */
     public function destroy($id): JsonResponse
     {
-        Blog::where('uuid', $id)->delete();
-        return response()->json(['message' => 'Blog deleted successfully']);
+        return $this->blogService->delete($id);
     }
 
-    public function serverSideTable(Request $request)
+    public function serverSideTable(Request $request): JsonResponse
     {
-        $blogs = Blog::select(['id', 'uuid', 'title', 'content', 'created_at']);
-        return DataTables::of($blogs)
-            ->addIndexColumn()
-            ->filter(function ($query) use ($request) {
-                if ($request->has('search') && $request->search['value'] != '') {
-                    $searchValue = $request->search['value'];
-                    $query->where(function ($query) use ($searchValue) {
-                        $query->where('title', 'like', "%{$searchValue}%")
-                            ->orWhere('content', 'like', "%{$searchValue}%")
-                            ->orWhere('created_at', 'like', "%{$searchValue}%");
-                    });
-                }
-            })
-            ->editColumn('created_at', function ($blog) {
-                return $blog->created_at->diffForHumans();
-            })
-            ->addColumn('action', function ($blog) {
-                return '
-                <div class="d-flex justify-content-center align-items-center">
-                <button class="btn btn-xs btn-primary edit me-2" onClick="editModal(this)" data-id="' . $blog->uuid . '"><i class="glyphicon glyphicon-edit"></i> Edit</button>
-                <button class="btn btn-xs btn-danger delete" onClick="deleteModal(this)" data-id="' . $blog->uuid . '"><i class="glyphicon glyphicon-trash"></i> Delete</button>
-                </div>';
-            })
-            ->rawColumns(['action'])
-            ->make(true);
+        return $this->blogService->getDataTable($request);
     }
 }
