@@ -268,7 +268,6 @@
         // edit blog
         function editModal(e) {
             let id = e.getAttribute('data-id');
-            console.log('Editing blog with UUID:', id);
 
             save_method = 'update';
             $.ajax({
@@ -278,8 +277,6 @@
                 url: "blog/" + id,
                 type: "GET",
                 success: function(response) {
-                    // alert(response);
-                    console.log('Response:', response.data);
                     let res = response.data
                     $('#id').val(res.uuid);
                     $('#title').val(res.title);
